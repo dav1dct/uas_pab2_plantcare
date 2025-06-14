@@ -1,9 +1,9 @@
-import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
@@ -13,117 +13,111 @@ class PostScreen extends StatefulWidget {
 }
 
 class _PostScreenState extends State<PostScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descController = TextEditingController();
-  File? _image;
+  final TextEditingController _namaController = TextEditingController();
+  final TextEditingController _deskripsiController = TextEditingController();
+  Uint8List? _imageBytes;
   bool _isLoading = false;
 
+  final picker = ImagePicker();
+
   Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _image = File(picked.path);
+        _imageBytes = bytes;
       });
     }
   }
 
-  Future<void> _uploadPlant() async {
-    if (_image == null ||
-        _nameController.text.trim().isEmpty ||
-        _descController.text.trim().isEmpty) {
+  Future<void> _uploadPost() async {
+    if (_imageBytes == null || _namaController.text.isEmpty || _deskripsiController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lengkapi semua data dan pilih gambar.")),
+        const SnackBar(content: Text('Semua field dan gambar wajib diisi!')),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      Reference ref = FirebaseStorage.instance.ref().child("tanaman/$fileName.jpg");
-      UploadTask uploadTask = ref.putFile(_image!);
-      TaskSnapshot snapshot = await uploadTask;
-      String downloadUrl = await snapshot.ref.getDownloadURL();
+      setState(() => _isLoading = true);
 
-      await FirebaseFirestore.instance.collection("tanaman").add({
-        "nama": _nameController.text.trim(),
-        "deskripsi": _descController.text.trim(),
-        "gambar_url": downloadUrl,
-        "created_at": FieldValue.serverTimestamp(),
+      final String imageId = const Uuid().v4();
+      final storageRef = FirebaseStorage.instance.ref().child('tanaman/$imageId.jpg');
+
+      // Upload image
+      await storageRef.putData(_imageBytes!, SettableMetadata(contentType: 'image/jpeg'));
+
+      // Get download URL
+      final String downloadURL = await storageRef.getDownloadURL();
+
+      // Simpan ke Firestore
+      await FirebaseFirestore.instance.collection('tanaman').add({
+        'nama': _namaController.text,
+        'deskripsi': _deskripsiController.text,
+        'gambar_url': downloadURL,
+        'created_at': FieldValue.serverTimestamp(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tanaman berhasil ditambahkan")),
+        const SnackBar(content: Text('Berhasil diunggah!')),
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context); // kembali ke home
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal upload: $e")),
+        SnackBar(content: Text('Gagal upload: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _deskripsiController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Tambah Tanaman")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(title: const Text('Tambah Tanaman')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _image != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(_image!, height: 200, fit: BoxFit.cover),
-                  )
-                : Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(child: Text("Belum ada gambar")),
-                  ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: _pickImage,
-              icon: const Icon(Icons.image),
-              label: const Text("Pilih Gambar"),
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: _imageBytes != null
+                    ? Image.memory(_imageBytes!, fit: BoxFit.cover)
+                    : const Center(child: Text('Klik untuk pilih gambar')),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: "Nama Tanaman",
-                border: OutlineInputBorder(),
-              ),
+              controller: _namaController,
+              decoration: const InputDecoration(labelText: 'Nama Tanaman'),
             ),
-            const SizedBox(height: 12),
             TextField(
-              controller: _descController,
-              decoration: const InputDecoration(
-                labelText: "Deskripsi",
-                border: OutlineInputBorder(),
-              ),
+              controller: _deskripsiController,
+              decoration: const InputDecoration(labelText: 'Deskripsi'),
               maxLines: 3,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _isLoading
                 ? const CircularProgressIndicator()
-                : SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _uploadPlant,
-                      child: const Text("Simpan"),
-                    ),
+                : ElevatedButton.icon(
+                    onPressed: _uploadPost,
+                    icon: const Icon(Icons.upload),
+                    label: const Text('Upload'),
                   ),
           ],
         ),

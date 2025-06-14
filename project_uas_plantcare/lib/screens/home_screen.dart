@@ -11,17 +11,6 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PostScreen()),
-              );
-            },
-          ),
-        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -51,6 +40,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
+              childAspectRatio: 0.75,
             ),
             itemBuilder: (context, index) {
               final data = tanamanDocs[index].data() as Map<String, dynamic>;
@@ -58,6 +48,9 @@ class HomeScreen extends StatelessWidget {
               final gambarUrl = data['gambar_url']?.toString() ?? '';
               final nama = data['nama'] ?? '';
               final deskripsi = data['deskripsi'] ?? '';
+
+              // Log untuk debugging
+              debugPrint('gambar_url: $gambarUrl');
 
               return Card(
                 shape: RoundedRectangleBorder(
@@ -74,10 +67,14 @@ class HomeScreen extends StatelessWidget {
                             ? Image.network(
                                 gambarUrl,
                                 fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return const Center(child: CircularProgressIndicator());
+                                },
                                 errorBuilder: (context, error, stackTrace) =>
-                                    const Center(child: Icon(Icons.broken_image)),
+                                    const Center(child: Icon(Icons.broken_image, size: 40)),
                               )
-                            : const Center(child: Icon(Icons.image_not_supported)),
+                            : const Center(child: Icon(Icons.image_not_supported, size: 40)),
                       ),
                     ),
                     Padding(
@@ -88,6 +85,8 @@ class HomeScreen extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Padding(
@@ -105,6 +104,16 @@ class HomeScreen extends StatelessWidget {
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PostScreen()),
+          );
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: const Icon(Icons.add),
       ),
     );
   }
