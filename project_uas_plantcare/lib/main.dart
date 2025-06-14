@@ -1,13 +1,20 @@
-import 'package:project_uas_plantcare/data/plant_data.dart';
-import 'package:project_uas_plantcare/screens/favorite_screen.dart';
-import 'package:project_uas_plantcare/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+import 'package:project_uas_plantcare/screens/home_screen.dart';
+import 'package:project_uas_plantcare/screens/favorite_screen.dart';
 import 'package:project_uas_plantcare/screens/detail_screen.dart';
 import 'package:project_uas_plantcare/screens/profile_screen.dart';
 import 'package:project_uas_plantcare/screens/main_screen.dart';
 import 'package:project_uas_plantcare/screens/login_screen.dart';
 import 'package:project_uas_plantcare/screens/register_screen.dart';
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MainApp());
 }
 
@@ -27,21 +34,13 @@ class MainApp extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple).copyWith(
           primary: Colors.deepPurple,
           surface: Colors.deepPurple[50],
         ),
-        useMaterial3: true
-
-      ), // themaDATA 
-      // home: DetailScreen(candi: candiList[0]),
-      // home: ProfileScreen(),
-      // home: SignInScreen(),
-      // home: FavoriteScreen(),
-      // home: SearchScreen(),
-      // home: HomeScreen(),
-      home: LoginScreen(),
-      );
+        useMaterial3: true,
+      ),
+      home: LoginScreen(), // Ubah sesuai kebutuhan
+    );
   }
 }

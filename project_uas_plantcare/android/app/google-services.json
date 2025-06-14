@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "627066273315",
+    "project_id": "dav1dct",
+    "storage_bucket": "dav1dct.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627066273315:android:69202656a6aa5fb6affb96",
+        "android_client_info": {
+          "package_name": "com.example.fasilitas_umum"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9GTynqoUg4HS9m990JwbIf5KVwFgxgeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627066273315:android:160892230f793bcdaffb96",
+        "android_client_info": {
+          "package_name": "com.example.project_uas_plantcare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9GTynqoUg4HS9m990JwbIf5KVwFgxgeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
